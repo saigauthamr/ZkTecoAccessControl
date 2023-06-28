@@ -1,4 +1,4 @@
-package org.gautham.f22.zkCommands;
+package org.gautham.f22.zkcommands;
 
 public enum CommandCode {
     //Begin connection

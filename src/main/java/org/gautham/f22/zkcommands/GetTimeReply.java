@@ -1,5 +1,6 @@
-package org.gautham.f22.zkCommands;
+package org.gautham.f22.zkcommands;
 
+import org.gautham.f22.DTO.ConvDTO;
 import org.gautham.f22.utils.HexUtils;
 
 import java.text.ParseException;
@@ -9,8 +10,8 @@ public class GetTimeReply extends CommandReply {
 
     private final Date deviceDate;
 
-    public GetTimeReply(CommandReplyCode code, int sessionId, int replyId, int[] payloads) throws ParseException {
-        super(code, sessionId, replyId, payloads);
+    public GetTimeReply(CommandReplyCode code, int sessionId, int replyId, int[] payloads, ConvDTO convDTO) throws ParseException {
+        super(code, convDTO, sessionId, replyId, payloads);
 
         String payloadsStr = HexUtils.bytesToHex(payloads);
 

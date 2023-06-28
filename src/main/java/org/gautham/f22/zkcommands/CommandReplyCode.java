@@ -1,7 +1,7 @@
-package org.gautham.f22.zkCommands;
+package org.gautham.f22.zkcommands;
 
 public enum CommandReplyCode {
-    //The request was processed sucessfully
+    //The request was processed successfully
     CMD_ACK_OK(2000), //There was an error when processing the request
     CMD_ACK_ERROR(2001), CMD_ACK_DATA(2002), CMD_ACK_RETRY(2003), CMD_ACK_REPEAT(2004), //Connection not authorized
     CMD_ACK_UNAUTH(2005), //Received unknown command

@@ -1,81 +1,70 @@
 package org.gautham.f22.zkterminal;
 
+import com.sun.org.slf4j.internal.Logger;
+import com.sun.org.slf4j.internal.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.gautham.f22.DTO.ConvDTO;
 import org.gautham.f22.events.EventCode;
 import org.gautham.f22.utils.HexUtils;
 import org.gautham.f22.utils.SecurityUtils;
-import org.gautham.f22.zkCommands.*;
+import org.gautham.f22.zkcommands.*;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.Date;
 
+import static org.gautham.f22.utils.ConnectionHandler.*;
+import static org.gautham.f22.utils.PacketUtils.*;
+
 public class Terminal {
 
-    private final String ip;
-    private final int port;
-    private DatagramSocket socket;
-    private InetAddress address;
-    private int sessionId;
-    private int replyNo;
+    private static final Logger logger = LoggerFactory.getLogger(Terminal.class);
+    private ConvDTO convDTO;
 
-    public Terminal(String ip, int port) {
-        this.ip = ip;
-        this.port = port;
+    public Terminal() {
+        convDTO = new ConvDTO();
+    }
+
+    public void setConvDTO(ConvDTO convDTO) {
+        this.convDTO = convDTO;
     }
 
     public CommandReply connect() throws IOException {
-        sessionId = 0;
-        replyNo = 0;
+        convDTO.setSessionId(0);
+        convDTO.setReplyNo(0);
 
-        socket = new DatagramSocket(port);
-        address = InetAddress.getByName(ip);
+        int[] toSend = Command.getPacket(CommandCode.CMD_CONNECT, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int[] toSend = Command.getPacket(CommandCode.CMD_CONNECT, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+        byte[] buf = convertIntToByteArray(toSend);
 
-        int index = 0;
+        sendPacket(buf, buf.length, address, port);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
-
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
 
         int[] response = readResponse();
 
         CommandReplyCode replyCode = CommandReplyCode.decode(response[0] + (response[1] * 0x100));
 
-        sessionId = response[4] + (response[5] * 0x100);
+        convDTO.setSessionId(response[4] + (response[5] * 0x100));
+
         int replyId = response[6] + (response[7] * 0x100);
 
         int[] payloads = new int[response.length - 8];
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
+
     public CommandReply enableDevice() throws IOException {
-        int[] toSend = Command.getPacket(CommandCode.CMD_ENABLEDEVICE, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_ENABLEDEVICE, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
+        sendPacket(buf, buf.length, address, port);
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
 
         int[] response = readResponse();
 
@@ -87,23 +76,17 @@ public class Terminal {
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
     public CommandReply disableDevice() throws IOException {
-        int[] toSend = Command.getPacket(CommandCode.CMD_DISABLEDEVICE, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_DISABLEDEVICE, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
+        sendPacket(buf, buf.length, address, port);
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
 
         int[] response = readResponse();
 
@@ -115,26 +98,19 @@ public class Terminal {
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
     public CommandReply connectAuth(int comKey) throws IOException {
-        int[] key = SecurityUtils.authKey(comKey, sessionId);
+        int[] key = SecurityUtils.authKey(comKey, convDTO.getSessionId());
 
-        int[] toSend = Command.getPacket(CommandCode.CMD_AUTH, sessionId, replyNo, key);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_AUTH, convDTO.getSessionId(), convDTO.getReplyNo(), key);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
+        sendPacket(buf, buf.length, address, port);
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
-
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
         int[] response = readResponse();
 
         CommandReplyCode replyCode = CommandReplyCode.decode(response[0] + (response[1] * 0x100));
@@ -145,7 +121,7 @@ public class Terminal {
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
     public CommandReply enableRealtime(EventCode... events) throws IOException {
@@ -169,17 +145,10 @@ public class Terminal {
 
         System.out.println(HexUtils.bytesToHex(eventReg));
 
-        int[] toSend = Command.getPacket(CommandCode.CMD_REG_EVENT, sessionId, replyNo, eventReg);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_REG_EVENT, convDTO.getSessionId(), convDTO.getReplyNo(), eventReg);
+        byte[] buf = convertIntToByteArray(toSend);
 
-        index = 0;
-
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
-
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
+        sendPacket(buf, buf.length, address, port);
 
         int[] response = readResponse();
 
@@ -191,24 +160,17 @@ public class Terminal {
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
     public CommandReply getAttendanceRecords() throws IOException, ParseException {
-        int[] toSend = Command.getPacket(CommandCode.CMD_ATTLOG_RRQ, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_ATTLOG_RRQ, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
+        sendPacket(buf, buf.length, address, port);
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
-
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
         int[] response = readResponse();
 
         CommandReplyCode replyCode = CommandReplyCode.decode(response[0] + (response[1] * 0x100));
@@ -221,6 +183,7 @@ public class Terminal {
             int lastDataRead;
 
             do {
+
                 int[] readData = readResponse();
 
                 lastDataRead = readData.length;
@@ -268,28 +231,21 @@ public class Terminal {
         }
 
         int replyId = response[6] + (response[7] * 0x100);
-
         int[] payloads = new int[response.length - 8];
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new CommandReply(replyCode, sessionId, replyId, payloads);
+        return new CommandReply(replyCode, convDTO, convDTO.getSessionId(), replyId, payloads);
     }
 
-    public GetTimeReply getDeviceTime() throws IOException, ParseException {
-        int[] toSend = Command.getPacket(CommandCode.CMD_GET_TIME, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+    public Date getDeviceTime() throws IOException, ParseException {
+        int[] toSend = Command.getPacket(CommandCode.CMD_GET_TIME, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
+        sendPacket(buf, buf.length, address, port);
 
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
+        convDTO.setReplyNo(convDTO.getReplyNo() + 1);
 
         int[] response = readResponse();
 
@@ -301,96 +257,17 @@ public class Terminal {
 
         System.arraycopy(response, 8, payloads, 0, payloads.length);
 
-        return new GetTimeReply(replyCode, sessionId, replyId, payloads);
+        GetTimeReply getTimeReply = new GetTimeReply(replyCode, convDTO.getSessionId(), replyId, payloads, convDTO);
+        return getTimeReply.getDeviceDate();
     }
 
     public void disconnect() throws IOException {
-        int[] toSend = Command.getPacket(CommandCode.CMD_EXIT, sessionId, replyNo, null);
-        byte[] buf = new byte[toSend.length];
+        int[] toSend = Command.getPacket(CommandCode.CMD_EXIT, convDTO.getSessionId(), convDTO.getReplyNo(), null);
 
-        int index = 0;
+        byte[] buf = convertIntToByteArray(toSend);
 
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
-
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
+        sendPacket(buf, buf.length, address, port);
 
         socket.close();
     }
-
-    public int[] readResponse() throws IOException {
-        byte[] buf = new byte[1000000];
-
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-        socket.receive(packet);
-
-        int[] response = new int[packet.getLength()];
-
-        for (int i = 0; i < response.length; i++) {
-            response[i] = buf[i] & 0xFF;
-        }
-
-        return response;
-
-        /*int index = 0;
-        int[] data = new int[1000000];
-
-        int read;
-        int size = 0;
-
-        boolean reading = true;
-
-        while (reading && (read = is.read()) != -1) {
-            if (index >= 4 && index <= 7) {
-                size += read * Math.pow(16, index - 4);
-            } else if (index > 7) {
-                if (index - 7 >= size) {
-                    reading = false;
-                }
-            }
-
-            data[index] = read;
-            index++;
-        }
-
-        int[] finalData = new int[index];
-
-        System.arraycopy(data, 0, finalData, 0, index);
-
-        return finalData;*/
-    }
-
-    public void doorUnlock(int delay) throws IOException {
-        int[] payload = {delay};
-
-        int[] toSend = Command.getPacket(CommandCode.CMD_UNLOCK, sessionId, replyNo, payload);
-        byte[] buf = new byte[toSend.length];
-
-        int index = 0;
-
-        for (int byteToSend : toSend) {
-            buf[index++] = (byte) byteToSend;
-        }
-
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
-        socket.send(packet);
-
-        replyNo++;
-
-        int[] response = readResponse();
-
-        CommandReplyCode replyCode = CommandReplyCode.decode(response[0] + (response[1] * 0x100));
-
-        int replyId = response[6] + (response[7] * 0x100);
-
-        int[] payloads = new int[response.length - 8];
-
-        System.arraycopy(response, 8, payloads, 0, payloads.length);
-
-        CommandReply commandReply = new CommandReply(replyCode, sessionId, replyId, payloads);
-    }
-
-
 }
