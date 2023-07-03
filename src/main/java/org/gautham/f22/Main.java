@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.logging.Logger;
 
 public class Main {
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
+    private static final Logger log = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) throws IOException, ParseException {
 
@@ -24,47 +24,47 @@ public class Main {
         Access access = new Access();
 
         // Connect to the terminal device and obtain a command reply
-        logger.info("connect");
+        log.info("connect");
         CommandReply reply = terminal.connect();
-        logger.info(String.valueOf(reply.getCode())); // Log the reply code
+        log.info(String.valueOf(reply.getCode())); // Log the reply code
 
         // Authenticate the connection with the specified authentication code
-        logger.info("connectAuth");
-        reply = terminal.connectAuth(580);
-        logger.info(String.valueOf(reply.getCode())); // Log the reply code
+        log.info("connectAuth");
+        reply = terminal.connectAuth(0);
+        log.info(String.valueOf(reply.getCode())); // Log the reply code
 
         // Get the current device time from the terminal
-        logger.info("getDeviceTime");
+        log.info("getDeviceTime");
         Date date = terminal.getDeviceTime();
-        logger.info(String.valueOf(date)); // Log the device time
+        log.info(String.valueOf(date)); // Log the device time
 
         // Disable the terminal device
-        logger.info("disableDevice");
+        log.info("disableDevice");
         reply = terminal.disableDevice();
-        logger.info(String.valueOf(reply.getCode())); // Log the reply code
+        log.info(String.valueOf(reply.getCode())); // Log the reply code
         // Get Attendance Records
         //logger.info("getAttendanceRecords");
         //reply = terminal.getAttendanceRecords();
         //logger.info(Arrays.toString(reply.getPayloads())); // Log the reply code
         // Unlock the door associated with delay 5 seconds
         access.setConvDTO(reply.getConvDTO());
-        logger.info("doorUnlock");
+        log.info("doorUnlock");
         access.doorUnlock(5);
         //Get the door state
-        logger.info("getDoorState");
+        log.info("getDoorState");
         reply = access.getDoorState();
-        logger.info(Arrays.toString(new int[]{reply.getPayloads()[0]})); // Log the reply code
+        log.info(Arrays.toString(new int[]{reply.getPayloads()[0]})); // Log the reply code
 
         // Enable the terminal device
-        logger.info("enableDevice");
+        log.info("enableDevice");
         terminal.setConvDTO(reply.getConvDTO());
         reply = terminal.enableDevice();
-        logger.info(String.valueOf(reply.getCode())); // Log the reply code
+        log.info(String.valueOf(reply.getCode())); // Log the reply code
 
         // Disconnect from the terminal device
-        logger.info("disconnect");
+        log.info("disconnect");
         terminal.disconnect();
-        logger.info(String.valueOf(reply.getCode())); // Log the reply code
+        log.info(String.valueOf(reply.getCode())); // Log the reply code
 
     }
 }

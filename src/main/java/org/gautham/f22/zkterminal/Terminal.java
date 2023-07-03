@@ -1,9 +1,9 @@
 package org.gautham.f22.zkterminal;
 
-import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.gautham.f22.DTO.ConvDTO;
+import org.gautham.f22.Main;
 import org.gautham.f22.events.EventCode;
 import org.gautham.f22.utils.HexUtils;
 import org.gautham.f22.utils.SecurityUtils;
@@ -12,13 +12,14 @@ import org.gautham.f22.zkcommands.*;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import static org.gautham.f22.utils.ConnectionHandler.*;
 import static org.gautham.f22.utils.PacketUtils.*;
 
 public class Terminal {
 
-    private static final Logger logger = LoggerFactory.getLogger(Terminal.class);
+    private static final Logger log = Logger.getLogger(Terminal.class.getName());
     private ConvDTO convDTO;
 
     public Terminal() {
@@ -143,7 +144,7 @@ public class Terminal {
             hex = hex.substring(2);
         }
 
-        System.out.println(HexUtils.bytesToHex(eventReg));
+        log.info(HexUtils.bytesToHex(eventReg));
 
         int[] toSend = Command.getPacket(CommandCode.CMD_REG_EVENT, convDTO.getSessionId(), convDTO.getReplyNo(), eventReg);
         byte[] buf = convertIntToByteArray(toSend);
@@ -209,7 +210,7 @@ public class Terminal {
 
             String userId = Character.toString((char) Integer.valueOf(record.substring(0, 2), 16).intValue()) + (char) Integer.valueOf(record.substring(2, 4), 16).intValue() + (char) Integer.valueOf(record.substring(4, 6), 16).intValue() + (char) Integer.valueOf(record.substring(6, 8), 16).intValue() + (char) Integer.valueOf(record.substring(8, 10), 16).intValue() + (char) Integer.valueOf(record.substring(10, 12), 16).intValue() + (char) Integer.valueOf(record.substring(12, 14), 16).intValue() + (char) Integer.valueOf(record.substring(14, 16), 16).intValue() + (char) Integer.valueOf(record.substring(16, 18), 16).intValue();
 
-            System.out.println(userId);
+            log.info(userId);
 
             record = record.substring(48);
 
@@ -221,7 +222,7 @@ public class Terminal {
 
             Date attendanceDate = HexUtils.extractDate(encDate);
 
-            System.out.println(attendanceDate);
+            log.info(String.valueOf(attendanceDate));
 
             record = record.substring(8);
 
