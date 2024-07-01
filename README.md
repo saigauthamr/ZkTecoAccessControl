@@ -6,33 +6,34 @@ Features
 Unlocks office door access control devices using the ZKTeco protocol.
 Designed for potential integration with MFA applications.
 Provides a foundation for enhancing office security mechanisms.
+
 Getting Started
+
 Prerequisites
 Java Development Kit (JDK) 8 or higher
 Maven
-Installation
-Clone the repository:
 
-sh
-Copy code
+Installation
+
+Clone the repository:
 git clone https://github.com/saigauthamr/ZkTecoAccessControl.git
+
 cd ZkTecoAccessControl
+
 Build the project using Maven:
 
-sh
-Copy code
 mvn clean install
-Usage
+
+Usage:
 Run the application:
 
-sh
-Copy code
 java -jar target/ZkTecoAccessControl-1.0.jar
-Follow the prompts to unlock the door.
+
+To unlock the door.
 
 Configuration
 Ensure the access control device is connected to the same network as the computer running the application.
-Update the configuration file config.properties with the device's IP address and other necessary details.
+Change the configuration in the main method.
 Contributing
 Contributions are welcome! Please fork this repository and submit pull requests to the develop branch.
 
